@@ -1,176 +1,121 @@
-# Supabase Task App (CRUD)
+# Supabase Auth Demo
 
-A production-style **to-do / task manager** built with plain HTML, CSS, and
-JavaScript, backed by a [Supabase](https://supabase.com) Postgres table. This
-project exists to make you comfortable with all four CRUD operations against
-a real database:
+A minimal email/password sign-up + login screen built with plain HTML, CSS, and
+JavaScript, backed by [Supabase Auth](https://supabase.com/docs/guides/auth).
+No frameworks, no build step — just three files.
 
-| Operation | Where it happens in `app.js` | Supabase call |
-|---|---|---|
-| **C**reate | `addForm` submit handler | `.insert({ task, completed: false })` |
-| **R**ead | `renderTasks()` | `.select("*").order("id")` |
-| **U**pdate | `toggleTask()` / `updateTaskText()` | `.update({ ... }).eq("id", id)` |
-| **D**elete | `deleteTask()` | `.delete().eq("id", id)` |
+![tabs](https://img.shields.io/badge/stack-HTML%20%2B%20CSS%20%2B%20JS-4338ca)
 
-It also keeps the list in sync in real time using Supabase's
-`postgres_changes` channel, so edits in another browser tab (or straight in
-the Supabase dashboard) show up here automatically.
+## What it does
 
-## Features
-
-- Add a task (**Create**)
-- See every task, newest last (**Read**)
-- Check a task off, or double-click / hit the pencil icon to rename it (**Update**)
-- Remove a task (**Delete**)
-- Live sync across tabs/devices via Supabase Realtime
-- Zero build step — just static files
+- **Sign up** — creates a new user with `supabase.auth.signUp()`
+- **Log in** — signs an existing user in with `supabase.auth.signInWithPassword()`
+- **Session-aware UI** — `onAuthStateChange` + `getSession()` automatically show
+  either the auth card or a small dashboard, and keep you logged in on refresh
+- **Log out** — `supabase.auth.signOut()`
 
 ## Files
 
 ```
-todo-app/
-├── index.html   # markup: add-task form, task list container
+auth-demo/
+├── index.html   # markup: tabs, login form, sign-up form, dashboard
 ├── style.css    # all styling — no CSS framework
-└── app.js       # Supabase client + all CRUD logic
+└── app.js       # Supabase client + all auth logic
 ```
 
 ## Prerequisites
 
 - A free [Supabase](https://supabase.com) account and project
-- Any way to serve static files locally
-- Node.js is **not required** to run the app — Supabase is loaded from a CDN
+- Any way to serve static files locally (browsers block some features, like
+  redirects, when you just double-click `index.html`)
+- Node.js is **not required** to run this app — Supabase is loaded from a CDN
   (`<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">` in
-  `index.html`). Node is only used below for a local dev server.
+  `index.html`). Node is only used below to get a quick local dev server.
 
 ## Setup
 
-### 1. Create the `tasks` table
+### 1. Create a Supabase project
 
-In your Supabase project: **Table Editor → New table**, or run this in the
-**SQL Editor**:
+1. Go to [supabase.com/dashboard](https://supabase.com/dashboard) → **New project**
+2. Wait for it to finish provisioning (~2 minutes)
 
-```sql
-create table public.tasks (
-  id         bigint generated always as identity primary key,
-  task       text not null,
-  completed  boolean not null default false,
-  created_at timestamptz not null default now()
-);
-```
+### 2. Get your API credentials
 
-This matches exactly what the app expects: `id`, `task` (the text of the
-to-do), and `completed`.
+In your project: **Settings → API**
 
-### 2. Row Level Security (RLS)
+- Copy the **Project URL**
+- Copy the **anon / public** key (never use the `service_role` key in
+  frontend code — it bypasses all security rules)
 
-For this demo the table has **RLS disabled** so any request with the anon
-key can read/write every row — fine for learning, not fine for a real app
-with multiple users. Before you ship this for real:
+### 3. Confirm email auth is enabled
 
-1. Turn RLS **on** for `tasks` (**Table Editor → tasks → RLS toggle**)
-2. Add a `user_id uuid references auth.users` column
-3. Add policies so a user can only see/edit their own rows, e.g.:
+**Authentication → Providers → Email** should be toggled on. This is on by
+default for new projects.
 
-```sql
-alter table public.tasks enable row level security;
-
-create policy "Users can manage their own tasks"
-  on public.tasks
-  for all
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
-```
-
-(Pair this with the Auth Demo app to get a real `user_id` from
-`supabase.auth.getUser()`.)
-
-### 3. Get your API credentials
-
-**Settings → API** → copy the **Project URL** and the **anon / public** key.
+> By default Supabase requires users to confirm their email before they can
+> log in. That's why sign-up shows *"Check your email to confirm"* instead of
+> logging you in immediately. You can turn this off for local testing under
+> **Authentication → Providers → Email → Confirm email**.
 
 ### 4. Add your credentials to the code
 
-Open `app.js` and set:
+Open `app.js` and replace the two placeholders near the top:
 
 ```js
 const SUPABASE_URL = "https://YOUR-PROJECT-REF.supabase.co";
 const SUPABASE_ANON_KEY = "YOUR-ANON-PUBLIC-KEY";
 ```
 
-If you're reusing the same Supabase project as the Auth Demo, you can leave
-these as they are — the `tasks` table lives in the same project.
+### 5. Run it locally
 
-### 5. Enable Realtime for the table (optional but recommended)
+You need *some* local server — opening the HTML file directly (`file://`)
+can cause Supabase's auth redirects to misbehave. The easiest options, pick one:
 
-**Database → Replication** → toggle on replication for the `tasks` table
-(or run `alter publication supabase_realtime add table tasks;` in the SQL
-editor). Without this, the app still works — it just won't auto-refresh
-when a row changes somewhere else.
-
-### 6. Run it locally
-
-Opening `index.html` directly (`file://`) can cause quirks with fetch
-requests in some browsers — serve it instead. Pick one:
-
-**Option A — no install, using `npx`:**
+**Option A — no install, using `npx` (recommended for beginners):**
 
 ```bash
 npx serve .
 ```
 
-**Option B — install once, reuse forever:**
+**Option B — install a dev server globally once, reuse it forever:**
 
 ```bash
 npm install -g live-server
 live-server .
 ```
 
-**Option C — VS Code "Live Server" extension** — right-click `index.html` →
-*Open with Live Server*.
+**Option C — VS Code's "Live Server" extension** — right-click
+`index.html` → *Open with Live Server*.
 
-Then open the printed `localhost` URL.
+Then open the printed `localhost` URL in your browser.
 
-## How each CRUD operation works
-
-**Create** — the form's `submit` listener inserts a new row and then
-re-fetches the list:
+## How auth state stays in sync
 
 ```js
-await supabaseClient.from("tasks").insert({ task: value, completed: false });
+supabaseClient.auth.onAuthStateChange((_event, session) => {
+  if (session && session.user) {
+    showLoggedInUI(session.user);
+  } else {
+    showLoggedOutUI();
+  }
+});
 ```
 
-**Read** — `renderTasks()` pulls every row, ordered by `id`, and rebuilds the
-`<ul>` from scratch. This is the single "source of truth" render function —
-every create/update/delete calls it again afterward so the UI always
-reflects the database, not just local state.
-
-**Update** — two paths: clicking the checkbox toggles `completed`;
-double-clicking (or the pencil icon) swaps the task's text for an `<input>`,
-and pressing **Enter** or clicking away saves it:
-
-```js
-await supabaseClient.from("tasks").update({ completed }).eq("id", id);
-await supabaseClient.from("tasks").update({ task }).eq("id", id);
-```
-
-**Delete** — the ✕ button removes the row by id:
-
-```js
-await supabaseClient.from("tasks").delete().eq("id", id);
-```
+This one listener handles sign up, log in, log out, and page refresh — it's
+the single source of truth for "am I logged in?" so the UI never gets out
+of sync with Supabase.
 
 ## Common issues
 
 | Symptom | Likely cause |
 |---|---|
-| "relation \"public.tasks\" does not exist" | Run the `create table` SQL from step 1 |
-| Tasks don't appear after adding one | Wrong `SUPABASE_URL` / `SUPABASE_ANON_KEY` — check **Settings → API** |
-| Adding/editing works but nothing updates in a second tab | Realtime replication isn't enabled for `tasks` (step 5) — the app still works, it just won't auto-sync |
-| Everyone can see everyone's tasks | Expected with RLS disabled — see step 2 to lock this down per-user |
+| Sign up succeeds but user never appears in **Authentication → Users** | Wrong `SUPABASE_URL` / `SUPABASE_ANON_KEY`, or a typo — double-check they're copied exactly from **Settings → API** |
+| "Check your email" but login still fails | Email confirmation is required and hasn't been clicked yet — confirm the email, or disable confirmation for local testing (see step 3) |
+| Nothing happens when submitting a form | Open the browser console (F12) — network/CORS errors show up there first |
+| Styles don't load | Make sure `style.css` and `app.js` are in the same folder as `index.html` and you're loading via `http://localhost`, not `file://` |
 
 ## Next steps
 
-- Wire this up to the Auth Demo so each task is scoped to `auth.uid()`
-- Add due dates, priority levels, or tags as extra columns
-- Add optimistic UI updates instead of re-fetching the whole list after every change
-- Add pagination or infinite scroll once the list gets long
+- Add password reset (`supabase.auth.resetPasswordForEmail`)
+- Add social login providers (Google, GitHub, etc.) under **Authentication → Providers**
+- Store extra profile info in a `profiles` table linked to `auth.users.id`
