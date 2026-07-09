@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Supabase Auth Demo</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <main class="auth-wrap">
+
+    <!-- Auth Card: Sign Up / Login tabs -->
+    <div class="card" id="authCard">
+      <div class="brand">
+        <span class="brand-mark">◆</span>
+        <span class="brand-name">Supabase Auth Demo</span>
+      </div>
+
+      <div class="tabs" role="tablist">
+        <button class="tab active" id="tabLogin" role="tab" aria-selected="true">Log in</button>
+        <button class="tab" id="tabSignUp" role="tab" aria-selected="false">Sign up</button>
+      </div>
+
+      <!-- Login form -->
+      <form class="panel" id="loginPanel">
+        <label class="field">
+          <span>Email</span>
+          <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email" required />
+        </label>
+        <label class="field">
+          <span>Password</span>
+          <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" required />
+        </label>
+        <button type="submit" class="btn-primary" id="loginBtn">
+          <span class="btn-label">Log in</span>
+        </button>
+        <p class="hint error" id="loginMessage" role="alert"></p>
+      </form>
+
+      <!-- Sign up form -->
+      <form class="panel hidden" id="signUpPanel">
+        <label class="field">
+          <span>Email</span>
+          <input type="email" id="signUpEmail" placeholder="you@example.com" autocomplete="email" required />
+        </label>
+        <label class="field">
+          <span>Password</span>
+          <input type="password" id="signUpPassword" placeholder="At least 6 characters" autocomplete="new-password" required minlength="6" />
+        </label>
+        <button type="submit" class="btn-primary" id="signUpBtn">
+          <span class="btn-label">Create account</span>
+        </button>
+        <p class="hint" id="signUpMessage" role="alert"></p>
+      </form>
+    </div>
+
+    <!-- Dashboard (shown after login) -->
+    <div class="card hidden" id="dashboardCard">
+      <div class="brand">
+        <span class="brand-mark">◆</span>
+        <span class="brand-name">Dashboard</span>
+      </div>
+      <div class="dash-user">
+        <div class="avatar" id="avatarInitial"></div>
+        <div>
+          <p class="dash-label">Signed in as</p>
+          <p class="dash-email" id="dashEmail"></p>
+        </div>
+      </div>
+      <button class="btn-secondary" id="logoutBtn">Log out</button>
+    </div>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
